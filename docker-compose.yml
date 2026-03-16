@@ -1,0 +1,21 @@
+version: "3"
+
+services:
+
+mysql:
+ image: mysql:8
+ environment:
+   MYSQL_ROOT_PASSWORD: root
+   MYSQL_DATABASE: bank_system
+ ports:
+   - "3306:3306"
+
+api-gateway:
+ build: ./api-gateway-node
+ ports:
+   - "5000:5000"
+
+kyc-service:
+ build: ./services/kyc-ai-service
+ ports:
+   - "8000:8000"
