@@ -3,46 +3,67 @@ from services.ocr_service import extract_text
 from services.kyc_service import verify_kyc
 from services.aml_service import aml_check
 from services.risk_engine import calculate_risk
-from models import save_transaction
+from utils.validator import validate_input
 from utils.logger import log
+from models import save_transaction, init_db
+from auth import generate_token
 
 app = Flask(__name__)
 
+# INIT DB
+init_db()
+
+# LOGIN
+@app.route("/login", methods=["POST"])
+def login():
+    data = request.json
+    if data["username"] == "admin" and data["password"] == "1234":
+        token = generate_token(data["username"])
+        return jsonify({"token": token})
+    return jsonify({"error": "Invalid login"}), 401
+
+
+# MAIN API
 @app.route("/api/process-account", methods=["POST"])
 def process_account():
-    try:
-        data = request.json
+    data = request.json
 
-        log("Received request")
+    valid, msg = validate_input(data)
+    if not valid:
+        return jsonify({"error": msg}), 400
 
-        # OCR
-        extracted = extract_text(data.get("documents", []))
+    log("Processing started")
 
-        # KYC
-        if not verify_kyc(extracted):
-            return jsonify({"status": "FAIL", "reason": "KYC Failed"}), 400
+    extracted = extract_text(data.get("documents", []))
 
-        # AML
-        if not aml_check(data.get("name")):
-            return jsonify({"status": "FAIL", "reason": "Blacklisted"}), 403
+    if not verify_kyc(extracted):
+        return jsonify({"error": "KYC Failed"}), 400
 
-        # Risk
-        score, level = calculate_risk(data)
+    if not aml_check(data.get("name")):
+        return jsonify({"error": "Blacklisted"}), 403
 
-        # Save
-        save_transaction(data, score, level)
+    score, level = calculate_risk(data)
 
-        log("Processed successfully")
+    save_transaction(data, score, level)
 
-        return jsonify({
-            "status": "SUCCESS",
-            "risk_score": score,
-            "risk_level": level
-        })
+    log("Processing completed")
 
-    except Exception as e:
-        log(str(e))
-        return jsonify({"status": "ERROR", "message": str(e)}), 500
+    return jsonify({
+        "status": "SUCCESS",
+        "risk_score": score,
+        "risk_level": level
+    })
+
+
+# VIEW TRANSACTIONS
+@app.route("/transactions", methods=["GET"])
+def transactions():
+    from database import get_connection
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM transactions")
+    data = cur.fetchall()
+    return jsonify(data)
 
 
 if __name__ == "__main__":
