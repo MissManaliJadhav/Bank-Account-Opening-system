@@ -7,6 +7,7 @@ from utils.validator import validate_input
 from utils.logger import log
 from models import save_transaction, init_db
 from auth import generate_token
+from services.pdf_service import generate_welcome_kit
 
 app = Flask(__name__)
 
