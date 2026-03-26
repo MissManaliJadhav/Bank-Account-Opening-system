@@ -119,3 +119,21 @@ Database
 
 ---
 
+# Banking Account Opening System - Python Module
+
+## Features
+- OCR Document Processing
+- KYC Verification
+- AML Screening
+- Risk Scoring Engine
+- PostgreSQL Integration
+- JWT Authentication
+
+## APIs
+POST /login  
+POST /api/process-account  
+GET /transactions  
+
+## Run
+pip install -r requirements.txt  
+python app.py  
