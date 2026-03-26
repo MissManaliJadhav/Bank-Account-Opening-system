@@ -45,14 +45,19 @@ def process_account():
 
     score, level = calculate_risk(data)
 
+# ✅ Generate PDF
+    pdf_file = generate_welcome_kit(data)
+    
+    # Save in DB
     save_transaction(data, score, level)
-
+    
     log("Processing completed")
-
+    
     return jsonify({
         "status": "SUCCESS",
         "risk_score": score,
-        "risk_level": level
+        "risk_level": level,
+        "welcome_kit": pdf_file   # ✅ Added this
     })
 
 
